@@ -4,7 +4,7 @@ const fs = require('fs')
 const pptx = officegen('pptx')
 const out = fs.createWriteStream('result.pptx')
 
-T.recognize('./image.png', 'eng', {logger: e => console.log(e)})
+T.recognize('./upload/fb70ed33e4be1e10038cd18946b55338.png', 'eng', {logger: e => console.log(e)})
     .then(result => {
         //Create a new slide
         const slide = pptx.makeNewSlide()
