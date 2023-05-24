@@ -4,7 +4,7 @@ const fs = require('fs')
 const docx = officegen('docx')
 const out = fs.createWriteStream('result.docx')
 
-T.recognize('./upload/fb70ed33e4be1e10038cd18946b55338.png', 'eng', {logger: e => console.log(e)})
+T.recognize('./upload/image-1683196850343.png', 'eng', {logger: e => console.log(e)})
     .then(result => {
         //Create a new paragraph
         const p = docx.createP()
