@@ -62,8 +62,6 @@ app.post('/upload', upload.single('image'), function(req, res) {
   // Menentukan jenis file yang diminta oleh aplikasi Flutter
   const fileType = req.query.fileType;
 
-  // console.log(fileType === 'pptx');
-
   // Memeriksa jenis file yang diminta
   if (fileType === 'docx') {
     // Kode untuk mengubah gambar ke docx
@@ -86,7 +84,7 @@ app.post('/upload', upload.single('image'), function(req, res) {
       .catch(err => {
         console.error(err);
       });
-      return;``
+      return;
   } else if (fileType === 'pptx') {
     // Kode untuk mengubah gambar ke pptx
     const pptx = officegen('pptx');
@@ -113,9 +111,6 @@ app.post('/upload', upload.single('image'), function(req, res) {
     // Tampilkan pesan kesalahan jika jenis file tidak valid
     return res.status(400).send('Invalid file type');
   }
-
-  console.log(req.file);
-  // return res.send('File uploaded successfully'); <-- Menghapus pernyataan ini
 });
 
 // Menangani kesalahan pada middleware multer
