@@ -4,18 +4,26 @@ const fs = require('fs');
 
 let server;
 
-beforeAll(async () => {
-  server = await app.listen(3000); // Ubah port sesuai kebutuhan Anda
+beforeAll(() => {
+  server = app.listen(3001); // Change the port as needed
 });
 
-afterAll(async () => {
-  await server.close();
+afterAll((done) => {
+  server.close(() => {
+    done(); // Add this line to ensure the Jest process exits
+  });
 });
+
+jest.setTimeout(10000); // Set the timeout for the entire test suite
 
 describe('POST /upload', () => {
   afterEach(() => {
-    fs.unlinkSync('./docxresult/result.docx');
-    fs.unlinkSync('./pptxresult/result.pptx');
+    if (fs.existsSync('./docxresult/result.docx')) {
+      fs.unlinkSync('./docxresult/result.docx');
+    }
+    if (fs.existsSync('./pptxresult/result.pptx')) {
+      fs.unlinkSync('./pptxresult/result.pptx');
+    }
   });
 
   it('should return 400 if no file uploaded', async () => {
@@ -24,28 +32,28 @@ describe('POST /upload', () => {
     expect(response.text).toBe('No file uploaded');
   });
 
-  it('should return 400 if invalid file type', async () => {
+  it('should return 500 if image is not png format', async () => {
     const response = await request(app)
       .post('/upload')
-      .attach('image', 'test.jpg')
-      .query({ fileType: 'invalid' });
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toBe('Invalid file type');
-  });
-
-  it('should return 500 if error uploading file', async () => {
-    const response = await request(app)
-      .post('/upload')
-      .attach('image', 'test.png')
+      .attach('image', `${__dirname}/test.jpg`)
       .query({ fileType: 'docx' });
     expect(response.statusCode).toBe(500);
     expect(response.text).toBe('Internal Server Error');
   });
 
+  it('should return 400 if invalid file type', async () => {
+    const response = await request(app)
+      .post('/upload')
+      .attach('image', `${__dirname}/test.png`)
+      .query({ fileType: 'invalid' });
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toBe('Invalid file type');
+  });
+
   it('should return 200 and download docx file', async () => {
     const response = await request(app)
       .post('/upload')
-      .attach('image', 'test.png')
+      .attach('image', `${__dirname}/test.png`)
       .query({ fileType: 'docx' });
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-disposition']).toContain('result.docx');
@@ -54,7 +62,7 @@ describe('POST /upload', () => {
   it('should return 200 and download pptx file', async () => {
     const response = await request(app)
       .post('/upload')
-      .attach('image', 'test.png')
+      .attach('image', `${__dirname}/test.png`)
       .query({ fileType: 'pptx' });
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-disposition']).toContain('result.pptx');

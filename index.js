@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(path.resolve(''), 'upload'));
   },
-  filename: function (req, file, cb) {  
+  filename: function (req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now() + '.png');
   }
 });
@@ -27,34 +27,34 @@ const upload = multer({
   }
 });
 
+const isTestEnvironment = process.env.NODE_ENV === 'test'; // Menentukan apakah dalam lingkungan pengujian atau tidak
+
 const sendConvertedFile = (res, fileType) => {
+  let file;
   if (fileType === 'docx') {
-    const file = path.join(__dirname, 'docxresult', 'result.docx');
-    return res.download(file, 'result.docx', (err) => {
-      if (err) {
-        console.error('Terjadi kesalahan saat mengirim file:', err);
-        res.status(500).send('Internal Server Error');
-      } else {
-        console.log('File berhasil dikirim');
-      }
-    });
+    file = isTestEnvironment
+      ? path.join(__dirname, '__test__', 'docxresult', 'result.docx')
+      : path.join(__dirname, 'docxresult', 'result.docx');
   } else if (fileType === 'pptx') {
-    const file = path.join(__dirname, 'pptxresult', 'result.pptx');
-    return res.download(file, 'result.pptx', (err) => {
-      if (err) {
-        console.error('Terjadi kesalahan saat mengirim file:', err);
-        res.status(500).send('Internal Server Error');
-      } else {
-        console.log('File berhasil dikirim');
-      }
-    });
+    file = isTestEnvironment
+      ? path.join(__dirname, '__test__', 'pptxresult', 'result.pptx')
+      : path.join(__dirname, 'pptxresult', 'result.pptx');
   } else {
-    res.status(400).send('Invalid file type');
+    return res.status(400).send('Invalid file type');
   }
+
+  return res.download(file, `result.${fileType}`, (err) => {
+    if (err) {
+      console.error('Terjadi kesalahan saat mengirim file:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      console.log('File berhasil dikirim');
+    }
+  });
 };
 
 // Menangani permintaan POST untuk mengunggah gambar
-app.post('/upload', upload.single('image'), function(req, res) {
+app.post('/upload', upload.single('image'), function (req, res) {
   if (!req.file) {
     return res.status(400).send('No file uploaded');
   }
@@ -66,7 +66,11 @@ app.post('/upload', upload.single('image'), function(req, res) {
   if (fileType === 'docx') {
     // Kode untuk mengubah gambar ke docx
     const docx = officegen('docx');
-    const out = fs.createWriteStream(path.join(__dirname, 'docxresult', 'result.docx'));
+    const out = fs.createWriteStream(
+      isTestEnvironment
+        ? path.join(__dirname, '__test__', 'docxresult', 'result.docx')
+        : path.join(__dirname, 'docxresult', 'result.docx')
+    );
     T.recognize(req.file.path, 'eng')
       .then(result => {
         const p = docx.createP();
@@ -84,11 +88,15 @@ app.post('/upload', upload.single('image'), function(req, res) {
       .catch(err => {
         console.error(err);
       });
-      return;
+    return;
   } else if (fileType === 'pptx') {
     // Kode untuk mengubah gambar ke pptx
     const pptx = officegen('pptx');
-    const out = fs.createWriteStream(path.join(__dirname, 'pptxresult', 'result.pptx')); // Ubah path penyimpanan di sini
+    const out = fs.createWriteStream(
+      isTestEnvironment
+        ? path.join(__dirname, '__test__', 'pptxresult', 'result.pptx')
+        : path.join(__dirname, 'pptxresult', 'result.pptx')
+    );
     T.recognize(req.file.path, 'eng')
       .then(result => {
         const slide = pptx.makeNewSlide();
@@ -114,7 +122,7 @@ app.post('/upload', upload.single('image'), function(req, res) {
 });
 
 // Menangani kesalahan pada middleware multer
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   if (err instanceof multer.MulterError) {
     // Kesalahan terjadi saat mengunggah gambar
     console.log(err);
@@ -125,7 +133,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Menangani kesalahan lainnya
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   console.log(err);
   return res.status(500).send('Internal Server Error');
 });
@@ -133,3 +141,5 @@ app.use(function(err, req, res, next) {
 app.listen(3000, function () {
   console.log('Server started on port 3000');
 });
+
+module.exports = app;
